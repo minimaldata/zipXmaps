@@ -42,6 +42,19 @@ open index.html
 
 The helper can preview generated `.geojson` files directly in the browser. Use the file picker, or serve the project directory locally and load a path such as `metabase_zip3.geojson`, to inspect feature count, loaded size, identifier/name fields, and individual region properties before hosting the map for Metabase. The preview renders the actual features in the loaded file; the built-in mini sample is only a parser/rendering check.
 
+Generate centroid CSVs for Metabase pin or grid maps:
+
+```bash
+python3 build_metabase_centroid_csv.py --all
+```
+
+This creates:
+
+- `metabase_zip5_centroids.csv`
+- `metabase_zip4_centroids.csv`
+- `metabase_zip3_centroids.csv`
+- `metabase_zip2_centroids.csv`
+
 Use a local Census cartographic boundary shapefile:
 
 ```bash
@@ -123,6 +136,43 @@ In Metabase:
 3. Set the region identifier to `zip5`, `zip4`, `zip3`, or `zip2`, matching the file you generated.
 4. Set the region display name to `name`.
 5. In your question, return a column with the same region identifier plus a metric.
+
+## Pin And Grid Maps
+
+The `.geojson` outputs are for Metabase custom region maps. For zoomable pin or grid maps, use the centroid CSV outputs instead.
+
+Each centroid CSV contains:
+
+- `zip_level`
+- `zip_code`
+- the level-specific code column, such as `zip5`, `zip4`, `zip3`, or `zip2`
+- `name`
+- `latitude`
+- `longitude`
+
+Example `zip3` centroid rows:
+
+```text
+zip_level,zip_code,zip3,name,latitude,longitude
+zip3,100,100,100,40.750000,-73.990000
+```
+
+For a pin map, join your metric query to a centroid table and return latitude and longitude:
+
+```sql
+select
+  c.latitude,
+  c.longitude,
+  c.zip3,
+  count(*) as metric
+from your_table t
+join zip3_centroids c
+  on left(lpad(t.zip5::varchar, 5, '0'), 3) = c.zip3
+where t.zip5 is not null
+group by 1, 2, 3;
+```
+
+For a grid map, use the same latitude and longitude columns. Metabase will bin or aggregate nearby points depending on the map settings available in your Metabase version.
 
 ## Example SQL
 
