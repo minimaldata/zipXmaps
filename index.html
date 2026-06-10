@@ -1,0 +1,1547 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metabase ZCTA Map Builder Explorer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f8f3;
+      --panel: #ffffff;
+      --ink: #1d2522;
+      --muted: #65716d;
+      --line: #d7ddd5;
+      --soft: #edf2ec;
+      --accent: #137c72;
+      --accent-dark: #0f5f58;
+      --amber: #b86f18;
+      --rose: #a83f4d;
+      --blue: #386fa4;
+      --shadow: 0 18px 40px rgba(29, 37, 34, 0.08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+    }
+
+    aside {
+      border-right: 1px solid var(--line);
+      padding: 24px 22px;
+      background: #fbfcf8;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(19, 124, 114, 0.95), rgba(56, 111, 164, 0.92)),
+        var(--accent);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mark::before,
+    .mark::after {
+      content: "";
+      position: absolute;
+      background: rgba(255, 255, 255, 0.72);
+      border-radius: 2px;
+    }
+
+    .mark::before {
+      width: 26px;
+      height: 2px;
+      left: 6px;
+      top: 15px;
+      transform: rotate(-26deg);
+    }
+
+    .mark::after {
+      width: 18px;
+      height: 2px;
+      right: 5px;
+      bottom: 12px;
+      transform: rotate(34deg);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: 24px;
+      line-height: 1.1;
+      margin-bottom: 6px;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 19px;
+      margin-bottom: 14px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      letter-spacing: 0;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .nav-stack {
+      display: grid;
+      gap: 10px;
+      margin: 24px 0;
+    }
+
+    .nav-stack a {
+      color: var(--muted);
+      text-decoration: none;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .nav-stack a:hover {
+      background: var(--soft);
+      color: var(--ink);
+    }
+
+    .side-note {
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    main {
+      padding: 26px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-dark);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .status-pill {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 7px 11px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(340px, 470px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-inner {
+      padding: 18px;
+    }
+
+    .control-group {
+      display: grid;
+      gap: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    label {
+      color: #303a36;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="file"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 11px;
+      min-height: 42px;
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .segmented button {
+      border: 0;
+      background: transparent;
+      min-height: 42px;
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .segmented button + button {
+      border-left: 1px solid var(--line);
+    }
+
+    .segmented button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    .toggle-row input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      flex: 0 0 auto;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      margin: 0 -18px;
+      background: #fbfcf8;
+    }
+
+    .metric {
+      padding: 14px 18px;
+      min-width: 0;
+    }
+
+    .metric + .metric {
+      border-left: 1px solid var(--line);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 19px;
+      line-height: 1.1;
+      word-break: break-word;
+    }
+
+    .map-panel {
+      min-height: 360px;
+      overflow: hidden;
+    }
+
+    .map-wrap {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .map-canvas {
+      min-height: 360px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(29, 37, 34, 0.04) 1px, transparent 1px),
+        linear-gradient(rgba(29, 37, 34, 0.04) 1px, transparent 1px),
+        #eef3ef;
+      background-size: 34px 34px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map-canvas svg {
+      width: 100%;
+      height: 360px;
+      display: block;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .map-canvas svg.dragging {
+      cursor: grabbing;
+    }
+
+    .geo-feature {
+      stroke: rgba(255, 255, 255, 0.9);
+      stroke-width: 1.4;
+      vector-effect: non-scaling-stroke;
+      cursor: pointer;
+      transition: opacity 140ms ease, stroke-width 140ms ease, filter 140ms ease;
+    }
+
+    .geo-feature:hover,
+    .geo-feature.selected {
+      opacity: 1;
+      stroke: #18211f;
+      stroke-width: 2.2;
+      filter: drop-shadow(0 5px 7px rgba(29, 37, 34, 0.16));
+    }
+
+    .map-empty {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .map-empty strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .preview-tools {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .secondary-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--accent-dark);
+      border-radius: 6px;
+      min-height: 42px;
+      padding: 8px 11px;
+      cursor: pointer;
+      font-weight: 700;
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    .secondary-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .preview-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .preview-stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcf8;
+      min-width: 0;
+    }
+
+    .preview-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+
+    .preview-stat strong {
+      display: block;
+      font-size: 15px;
+      word-break: break-word;
+    }
+
+    .map-label {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .zoom-controls {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 10;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px;
+      box-shadow: 0 8px 20px rgba(29, 37, 34, 0.1);
+      pointer-events: auto;
+    }
+
+    .zoom-controls button {
+      position: relative;
+      z-index: 11;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--accent-dark);
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .zoom-controls button:hover {
+      border-color: var(--accent);
+    }
+
+    .zoom-readout {
+      min-width: 48px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .info-list {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .info-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcf8;
+    }
+
+    .info-item strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .feature-details {
+      max-height: 178px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px;
+      background: #fff;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .output-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    pre {
+      margin: 0;
+      overflow: auto;
+      border-radius: 8px;
+      background: #18211f;
+      color: #eef8f2;
+      padding: 15px;
+      min-height: 182px;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .code-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .copy-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--accent-dark);
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-weight: 700;
+      min-width: 76px;
+    }
+
+    .copy-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .setup {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .step {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      min-height: 112px;
+    }
+
+    .step span {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--accent-dark);
+      font-weight: 800;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+
+    .warning {
+      border-left: 4px solid var(--amber);
+      background: #fff8ed;
+      padding: 12px 14px;
+      border-radius: 6px;
+      color: #6e430d;
+      margin-top: 16px;
+      font-size: 13px;
+    }
+
+    footer {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 24px;
+    }
+
+    @media (max-width: 1320px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .nav-stack {
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .workspace,
+      .map-wrap,
+      .output-grid,
+      .preview-tools {
+        grid-template-columns: 1fr;
+      }
+
+      .setup {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 660px) {
+      main {
+        padding: 18px;
+      }
+
+      .topbar {
+        display: grid;
+      }
+
+      .metrics,
+      .preview-stats,
+      .setup {
+        grid-template-columns: 1fr;
+      }
+
+      .metric + .metric {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <div>
+          <h1>ZCTA Map Builder</h1>
+          <p class="subtle">Metabase custom map explorer</p>
+        </div>
+      </div>
+      <nav class="nav-stack" aria-label="Page sections">
+        <a href="#builder">Builder</a>
+        <a href="#preview">Preview</a>
+        <a href="#outputs">Command and SQL</a>
+        <a href="#setup">Metabase setup</a>
+      </nav>
+      <div class="side-note">
+        Uses Census ZCTA boundaries. ZIP4-prefix means the first four digits of ZIP5, not USPS ZIP+4.
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Exploratory HTML page</div>
+          <h2>Choose a map grain, tune file size, preview GeoJSON, and copy the exact CLI and SQL fields.</h2>
+          <p class="subtle">This page is static and runs locally in the browser. It helps decide the command, then previews generated GeoJSON without uploading it anywhere.</p>
+        </div>
+        <div class="status-pill" id="statusPill">Recommended: ZIP4-prefix</div>
+      </header>
+
+      <section class="workspace" id="builder">
+        <div class="panel">
+          <div class="panel-inner control-group">
+            <div class="field">
+              <label>Aggregation level</label>
+              <div class="segmented" role="tablist" aria-label="Aggregation level">
+                <button type="button" data-level="zip5">ZIP5</button>
+                <button type="button" data-level="zip4" class="active">ZIP4</button>
+                <button type="button" data-level="zip3">ZIP3</button>
+                <button type="button" data-level="zip2">ZIP2</button>
+              </div>
+              <p class="subtle" id="levelHelp">ZIP4-prefix dissolves ZCTAs by the first four digits of ZIP5.</p>
+            </div>
+
+            <div class="field">
+              <label for="zipCsv">Filter CSV path</label>
+              <input id="zipCsv" type="text" value="my_zips.csv" autocomplete="off">
+              <p class="subtle">Filtering is the most reliable way to keep ZIP5 maps under the Metabase practical size limit.</p>
+            </div>
+
+            <div class="field">
+              <label for="zipCol">ZIP column</label>
+              <input id="zipCol" type="text" value="zip5" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <label for="simplify">Simplification tolerance: <span id="simplifyValue">0.001</span></label>
+              <input id="simplify" type="range" min="0" max="0.01" value="0.001" step="0.0005">
+              <p class="subtle">Higher values make smaller files with less boundary detail.</p>
+            </div>
+
+            <div class="toggle-row">
+              <div>
+                <label for="useLocal">Use local Census file</label>
+                <p class="subtle">Disable to let the script download the 2020 cartographic ZCTA file.</p>
+              </div>
+              <input id="useLocal" type="checkbox">
+            </div>
+
+            <div class="field" id="localPathWrap">
+              <label for="localPath">Local shapefile or GeoJSON</label>
+              <input id="localPath" type="text" value="path/to/cb_2020_us_zcta520_500k.shp" autocomplete="off">
+            </div>
+
+            <div class="toggle-row">
+              <div>
+                <label for="filterEnabled">Filter to CSV ZIPs</label>
+                <p class="subtle">Recommended for ZIP5 and narrow market maps.</p>
+              </div>
+              <input id="filterEnabled" type="checkbox">
+            </div>
+          </div>
+          <div class="metrics" aria-label="Output summary">
+            <div class="metric">
+              <span>Identifier</span>
+              <strong id="identifierMetric">zip4</strong>
+            </div>
+            <div class="metric">
+              <span>Properties</span>
+              <strong id="propertiesMetric">zip4, name</strong>
+            </div>
+            <div class="metric">
+              <span>Size posture</span>
+              <strong id="sizeMetric">Balanced</strong>
+            </div>
+          </div>
+          <div class="panel-inner">
+            <div class="warning" id="warningBox">ZIP4-prefix is usually a good Metabase default when ZIP5 has too many features but ZIP3 is too coarse.</div>
+          </div>
+        </div>
+
+        <div class="panel map-panel" id="preview">
+          <div class="panel-inner">
+            <h2>GeoJSON Map Preview</h2>
+            <div class="preview-tools">
+              <div class="field">
+                <label for="geojsonFile">Generated GeoJSON file</label>
+                <input id="geojsonFile" type="file" accept=".geojson,.json,application/geo+json,application/json">
+              </div>
+              <div class="field">
+                <label for="geojsonUrl">GeoJSON URL or local server path</label>
+                <input id="geojsonUrl" type="text" value="metabase_zip3.geojson" autocomplete="off">
+              </div>
+              <button class="secondary-btn" type="button" id="loadUrlPreview">Load URL</button>
+              <button class="secondary-btn" type="button" id="samplePreview">Load mini sample</button>
+              <button class="secondary-btn" type="button" id="clearPreview">Clear</button>
+            </div>
+            <div class="map-wrap">
+              <div class="map-canvas" id="mapCanvas" data-level="zip4" aria-label="GeoJSON polygon preview">
+                <svg id="mapSvg" viewBox="0 0 900 560" role="img" aria-label="Loaded GeoJSON map preview"></svg>
+                <div class="zoom-controls" aria-label="Map zoom controls">
+                  <button type="button" id="zoomOut" aria-label="Zoom out">-</button>
+                  <span class="zoom-readout" id="zoomReadout">100%</span>
+                  <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
+                  <button type="button" id="zoomReset" aria-label="Reset map view">Fit</button>
+                </div>
+                <div class="map-empty" id="mapEmpty">
+                  <div>
+                    <strong>Load a generated GeoJSON file</strong>
+                    <span>The preview renders every polygon feature in the file, including national ZIP3/ZIP4 outputs.</span>
+                  </div>
+                </div>
+                <div class="map-label" id="mapLabel">No GeoJSON loaded</div>
+              </div>
+              <div class="info-list">
+                <div class="info-item">
+                  <strong id="grainTitle">Preview status</strong>
+                  <p class="subtle" id="grainCopy">Load the output from `build_metabase_zcta_map.py` to verify the actual regions Metabase will read. A national ZIP3 file should render hundreds of regions, not a tiny placeholder.</p>
+                </div>
+                <div class="info-item">
+                  <strong>Metabase match field</strong>
+                  <p class="subtle" id="matchCopy">Your query must return a `zip4` column.</p>
+                </div>
+                <div class="info-item">
+                  <strong>Selected feature</strong>
+                  <p class="subtle" id="bestUseCopy">Regional ZIP analysis where ZIP5 is too large or too visually noisy.</p>
+                  <div class="feature-details" id="featureDetails">Click a region after loading GeoJSON.</div>
+                </div>
+              </div>
+            </div>
+            <div class="preview-stats" aria-label="GeoJSON preview stats">
+              <div class="preview-stat">
+                <span>Features</span>
+                <strong id="previewFeatureCount">0</strong>
+              </div>
+              <div class="preview-stat">
+                <span>Identifier check</span>
+                <strong id="previewIdentifierCheck">Waiting</strong>
+              </div>
+              <div class="preview-stat">
+                <span>Loaded size</span>
+                <strong id="previewSize">0 MB</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="output-grid" id="outputs">
+        <div class="panel">
+          <div class="panel-inner">
+            <div class="code-head">
+              <h2>CLI Command</h2>
+              <button class="copy-btn" type="button" data-copy="commandOutput">Copy</button>
+            </div>
+            <pre id="commandOutput"></pre>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-inner">
+            <div class="code-head">
+              <h2>Metabase SQL</h2>
+              <button class="copy-btn" type="button" data-copy="sqlOutput">Copy</button>
+            </div>
+            <pre id="sqlOutput"></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="setup" id="setup" aria-label="Metabase setup steps">
+        <div class="step">
+          <span>1</span>
+          <h3>Build GeoJSON</h3>
+          <p class="subtle">Run the generated command and confirm the output size is close to or under 5 MB.</p>
+        </div>
+        <div class="step">
+          <span>2</span>
+          <h3>Host File</h3>
+          <p class="subtle">Publish the GeoJSON to S3, Netlify, GitHub Pages, or another public static host.</p>
+        </div>
+        <div class="step">
+          <span>3</span>
+          <h3>Add Custom Map</h3>
+          <p class="subtle">In Metabase, use Admin -> Settings -> Maps -> Custom Maps.</p>
+        </div>
+        <div class="step">
+          <span>4</span>
+          <h3>Set Fields</h3>
+          <p class="subtle" id="setupFields">Region identifier: zip4. Display name: name.</p>
+        </div>
+      </section>
+
+      <footer>
+        Census ZCTAs approximate ZIP Code areas. ZIP4-prefix and ZIP3-prefix are practical rollups for custom map performance, not official Census geographies.
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const state = {
+      level: "zip4",
+      zipCsv: "my_zips.csv",
+      zipCol: "zip5",
+      simplify: "0.001",
+      useLocal: false,
+      filterEnabled: false,
+      previewGeojson: null,
+      previewName: "",
+      previewBytes: 0,
+      selectedFeatureIndex: null,
+      mapScale: 1,
+      mapPanX: 0,
+      mapPanY: 0,
+      isDraggingMap: false,
+      dragMoved: false,
+      suppressFeatureClick: false,
+      dragStartClientX: 0,
+      dragStartClientY: 0,
+      dragStartPanX: 0,
+      dragStartPanY: 0
+    };
+
+    const MAP_WIDTH = 900;
+    const MAP_HEIGHT = 560;
+    const MIN_MAP_SCALE = 1;
+    const MAX_MAP_SCALE = 64;
+
+    const levelMeta = {
+      zip5: {
+        label: "ZIP5 / ZCTA5",
+        help: "ZIP5 keeps one feature per Census ZCTA.",
+        map: "One feature per ZCTA",
+        grain: "ZIP5 / ZCTA5",
+        copy: "Keeps one feature for each Census ZCTA and preserves the most local detail.",
+        best: "Filtered local maps where your CSV contains a manageable set of ZIPs.",
+        size: "Largest",
+        posture: "High detail",
+        warning: "National ZIP5 is likely too large for Metabase. Filter to the ZIPs in your data or increase simplification.",
+        sql: "select\n  lpad(zip5::varchar, 5, '0') as zip5,\n  count(*) as metric\nfrom your_table\nwhere zip5 is not null\ngroup by 1;"
+      },
+      zip4: {
+        label: "ZIP4-prefix",
+        help: "ZIP4-prefix dissolves ZCTAs by the first four digits of ZIP5.",
+        map: "Dissolved by first 4 ZIP digits",
+        grain: "ZIP4-prefix",
+        copy: "Groups ZCTAs that share the first four digits, producing fewer features than ZIP5.",
+        best: "Regional ZIP analysis where ZIP5 is too large or too visually noisy.",
+        size: "Balanced",
+        posture: "Balanced",
+        warning: "ZIP4-prefix is usually a good Metabase default when ZIP5 has too many features but ZIP3 is too coarse.",
+        sql: "select\n  left(lpad(zip5::varchar, 5, '0'), 4) as zip4,\n  count(*) as metric\nfrom your_table\nwhere zip5 is not null\ngroup by 1;"
+      },
+      zip3: {
+        label: "ZIP3-prefix",
+        help: "ZIP3-prefix dissolves ZCTAs by the first three digits of ZIP5.",
+        map: "Dissolved by first 3 ZIP digits",
+        grain: "ZIP3-prefix",
+        copy: "Creates broad territories from the first three ZIP digits for compact national or multi-state maps.",
+        best: "National maps, executive summaries, and cases where Metabase file size matters more than local detail.",
+        size: "Smallest",
+        posture: "Most compact",
+        warning: "ZIP3-prefix is compact but can hide important local variation. Use it when the map needs a broad regional view.",
+        sql: "select\n  left(lpad(zip5::varchar, 5, '0'), 3) as zip3,\n  count(*) as metric\nfrom your_table\nwhere zip5 is not null\ngroup by 1;"
+      },
+      zip2: {
+        label: "ZIP2-prefix",
+        help: "ZIP2-prefix dissolves ZCTAs by the first two digits of ZIP5.",
+        map: "Dissolved by first 2 ZIP digits",
+        grain: "ZIP2-prefix",
+        copy: "Creates very broad territories from the first two ZIP digits for compact national maps.",
+        best: "Whole-USA views where ZIP3 still has too much detail or file size.",
+        size: "Smallest",
+        posture: "Broadest",
+        warning: "ZIP2-prefix is a coarse operational rollup, not an official geography. Use it for national orientation rather than local analysis.",
+        sql: "select\n  left(lpad(zip5::varchar, 5, '0'), 2) as zip2,\n  count(*) as metric\nfrom your_table\nwhere zip5 is not null\ngroup by 1;"
+      }
+    };
+
+    const els = {
+      buttons: [...document.querySelectorAll(".segmented button[data-level]")],
+      levelHelp: document.getElementById("levelHelp"),
+      zipCsv: document.getElementById("zipCsv"),
+      zipCol: document.getElementById("zipCol"),
+      simplify: document.getElementById("simplify"),
+      simplifyValue: document.getElementById("simplifyValue"),
+      useLocal: document.getElementById("useLocal"),
+      localPathWrap: document.getElementById("localPathWrap"),
+      localPath: document.getElementById("localPath"),
+      filterEnabled: document.getElementById("filterEnabled"),
+      identifierMetric: document.getElementById("identifierMetric"),
+      propertiesMetric: document.getElementById("propertiesMetric"),
+      sizeMetric: document.getElementById("sizeMetric"),
+      warningBox: document.getElementById("warningBox"),
+      mapCanvas: document.getElementById("mapCanvas"),
+      mapSvg: document.getElementById("mapSvg"),
+      mapEmpty: document.getElementById("mapEmpty"),
+      mapLabel: document.getElementById("mapLabel"),
+      zoomIn: document.getElementById("zoomIn"),
+      zoomOut: document.getElementById("zoomOut"),
+      zoomReset: document.getElementById("zoomReset"),
+      zoomReadout: document.getElementById("zoomReadout"),
+      geojsonFile: document.getElementById("geojsonFile"),
+      geojsonUrl: document.getElementById("geojsonUrl"),
+      loadUrlPreview: document.getElementById("loadUrlPreview"),
+      samplePreview: document.getElementById("samplePreview"),
+      clearPreview: document.getElementById("clearPreview"),
+      grainTitle: document.getElementById("grainTitle"),
+      grainCopy: document.getElementById("grainCopy"),
+      matchCopy: document.getElementById("matchCopy"),
+      bestUseCopy: document.getElementById("bestUseCopy"),
+      featureDetails: document.getElementById("featureDetails"),
+      previewFeatureCount: document.getElementById("previewFeatureCount"),
+      previewIdentifierCheck: document.getElementById("previewIdentifierCheck"),
+      previewSize: document.getElementById("previewSize"),
+      commandOutput: document.getElementById("commandOutput"),
+      sqlOutput: document.getElementById("sqlOutput"),
+      setupFields: document.getElementById("setupFields"),
+      statusPill: document.getElementById("statusPill")
+    };
+
+    function buildCommand() {
+      const lines = ["python3 build_metabase_zcta_map.py \\"];
+
+      if (state.useLocal) {
+        lines.push(`  --input-shapefile ${els.localPath.value || "path/to/cb_2020_us_zcta520_500k.shp"} \\`);
+      }
+
+      if (state.filterEnabled) {
+        lines.push(`  --zip-csv ${state.zipCsv || "my_zips.csv"} \\`);
+        lines.push(`  --zip-col ${state.zipCol || "zip5"} \\`);
+      }
+
+      lines.push(`  --level ${state.level} \\`);
+      lines.push(`  --simplify-tolerance ${state.simplify} \\`);
+      lines.push(`  --out metabase_${state.level}.geojson`);
+
+      return lines.join("\n");
+    }
+
+    function bytesToMb(bytes) {
+      return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    }
+
+    function featureCollectionFeatures(geojson) {
+      if (!geojson) return [];
+      if (geojson.type === "FeatureCollection" && Array.isArray(geojson.features)) {
+        return geojson.features;
+      }
+      if (geojson.type === "Feature") {
+        return [geojson];
+      }
+      if (geojson.type === "Polygon" || geojson.type === "MultiPolygon") {
+        return [{ type: "Feature", properties: {}, geometry: geojson }];
+      }
+      return [];
+    }
+
+    function polygonSets(geometry) {
+      if (!geometry) return [];
+      if (geometry.type === "Polygon") return [geometry.coordinates];
+      if (geometry.type === "MultiPolygon") return geometry.coordinates;
+      return [];
+    }
+
+    function collectPositionsFromGeometry(geometry, positions) {
+      polygonSets(geometry).forEach((polygon) => {
+        polygon.forEach((ring) => {
+          ring.forEach((position) => {
+            if (
+              Array.isArray(position) &&
+              Number.isFinite(position[0]) &&
+              Number.isFinite(position[1])
+            ) {
+              positions.push(position);
+            }
+          });
+        });
+      });
+    }
+
+    function boundsForFeatures(features) {
+      const positions = [];
+      features.forEach((feature) => collectPositionsFromGeometry(feature.geometry, positions));
+      if (!positions.length) return null;
+
+      return positions.reduce(
+        (bounds, position) => ({
+          minX: Math.min(bounds.minX, position[0]),
+          minY: Math.min(bounds.minY, position[1]),
+          maxX: Math.max(bounds.maxX, position[0]),
+          maxY: Math.max(bounds.maxY, position[1])
+        }),
+        {
+          minX: Infinity,
+          minY: Infinity,
+          maxX: -Infinity,
+          maxY: -Infinity
+        }
+      );
+    }
+
+    function clampMapPan() {
+      const scaledWidth = MAP_WIDTH * state.mapScale;
+      const scaledHeight = MAP_HEIGHT * state.mapScale;
+      const minX = MAP_WIDTH - scaledWidth;
+      const minY = MAP_HEIGHT - scaledHeight;
+
+      if (state.mapScale <= 1) {
+        state.mapPanX = 0;
+        state.mapPanY = 0;
+        return;
+      }
+
+      state.mapPanX = Math.min(0, Math.max(minX, state.mapPanX));
+      state.mapPanY = Math.min(0, Math.max(minY, state.mapPanY));
+    }
+
+    function applyMapTransform() {
+      clampMapPan();
+      const layer = document.getElementById("mapLayer");
+      if (layer) {
+        layer.setAttribute(
+          "transform",
+          `translate(${state.mapPanX.toFixed(2)} ${state.mapPanY.toFixed(2)}) scale(${state.mapScale.toFixed(4)})`
+        );
+      }
+      els.zoomReadout.textContent = state.mapScale >= 10
+        ? `${state.mapScale.toFixed(1)}x`
+        : `${Math.round(state.mapScale * 100)}%`;
+    }
+
+    function resetMapView() {
+      state.mapScale = 1;
+      state.mapPanX = 0;
+      state.mapPanY = 0;
+      applyMapTransform();
+    }
+
+    function svgPointFromClient(clientX, clientY) {
+      const rect = els.mapSvg.getBoundingClientRect();
+      return {
+        x: ((clientX - rect.left) / rect.width) * MAP_WIDTH,
+        y: ((clientY - rect.top) / rect.height) * MAP_HEIGHT
+      };
+    }
+
+    function zoomMap(factor, center = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 }) {
+      const oldScale = state.mapScale;
+      const nextScale = Math.min(MAX_MAP_SCALE, Math.max(MIN_MAP_SCALE, oldScale * factor));
+      if (nextScale === oldScale) return;
+
+      const ratio = nextScale / oldScale;
+      state.mapPanX = center.x - (center.x - state.mapPanX) * ratio;
+      state.mapPanY = center.y - (center.y - state.mapPanY) * ratio;
+      state.mapScale = nextScale;
+      applyMapTransform();
+    }
+
+    function projectionForBounds(bounds) {
+      const width = MAP_WIDTH;
+      const height = MAP_HEIGHT;
+      const padding = 28;
+      const dx = Math.max(bounds.maxX - bounds.minX, 0.000001);
+      const dy = Math.max(bounds.maxY - bounds.minY, 0.000001);
+      const scale = Math.min((width - padding * 2) / dx, (height - padding * 2) / dy);
+      const drawnWidth = dx * scale;
+      const drawnHeight = dy * scale;
+      const offsetX = (width - drawnWidth) / 2;
+      const offsetY = (height - drawnHeight) / 2;
+
+      return ([lon, lat]) => [
+        offsetX + (lon - bounds.minX) * scale,
+        height - offsetY - (lat - bounds.minY) * scale
+      ];
+    }
+
+    function ringPath(ring, project) {
+      return ring
+        .filter((position) => Number.isFinite(position[0]) && Number.isFinite(position[1]))
+        .map((position, index) => {
+          const [x, y] = project(position);
+          return `${index === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
+        })
+        .join(" ") + " Z";
+    }
+
+    function featurePath(feature, project) {
+      return polygonSets(feature.geometry)
+        .map((polygon) => polygon.map((ring) => ringPath(ring, project)).join(" "))
+        .join(" ");
+    }
+
+    function featureLabel(feature, index) {
+      const props = feature.properties || {};
+      return props[state.level] || props.name || props.zip5 || props.zip4 || props.zip3 || props.zip2 || `Feature ${index + 1}`;
+    }
+
+    function previewSummary(features) {
+      const missingIdentifier = features.filter((feature) => {
+        const props = feature.properties || {};
+        return props[state.level] === undefined || props[state.level] === null || props[state.level] === "";
+      }).length;
+      const missingName = features.filter((feature) => {
+        const props = feature.properties || {};
+        return props.name === undefined || props.name === null || props.name === "";
+      }).length;
+
+      if (!features.length) {
+        return "No features";
+      }
+      if (missingIdentifier === 0 && missingName === 0) {
+        return "Ready";
+      }
+      if (missingIdentifier > 0) {
+        return `${missingIdentifier} missing ${state.level}`;
+      }
+      return `${missingName} missing name`;
+    }
+
+    function selectedFeatureText(feature, index) {
+      if (!feature) return "Click a region after loading GeoJSON.";
+      const props = feature.properties || {};
+      const rows = Object.keys(props)
+        .sort()
+        .map((key) => `${key}: ${props[key]}`);
+      return [`feature: ${index + 1}`, `geometry: ${feature.geometry?.type || "Unknown"}`, ...rows].join("\n");
+    }
+
+    function renderGeoJsonPreview() {
+      const meta = levelMeta[state.level];
+      const features = featureCollectionFeatures(state.previewGeojson).filter((feature) => {
+        return feature.geometry && polygonSets(feature.geometry).length > 0;
+      });
+      const bounds = boundsForFeatures(features);
+      const palette = ["#137c72", "#386fa4", "#b86f18", "#a83f4d", "#61735f", "#7a689f", "#2f8f57"];
+
+      els.mapSvg.innerHTML = "";
+      els.previewFeatureCount.textContent = features.length.toLocaleString();
+      els.previewIdentifierCheck.textContent = previewSummary(features);
+      els.previewSize.textContent = state.previewBytes ? bytesToMb(state.previewBytes) : "0 MB";
+      els.mapEmpty.style.display = features.length && bounds ? "none" : "grid";
+
+      if (!features.length || !bounds) {
+        els.mapLabel.textContent = "No GeoJSON loaded";
+        els.grainTitle.textContent = "Preview status";
+        els.grainCopy.textContent = "Load the output from `build_metabase_zcta_map.py` to verify the actual regions Metabase will read.";
+        els.bestUseCopy.textContent = meta.best;
+        els.featureDetails.textContent = "Click a region after loading GeoJSON.";
+        applyMapTransform();
+        return;
+      }
+
+      const project = projectionForBounds(bounds);
+      const layer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      layer.setAttribute("id", "mapLayer");
+      const fragment = document.createDocumentFragment();
+      features.forEach((feature, index) => {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", featurePath(feature, project));
+        path.setAttribute("fill", palette[index % palette.length]);
+        path.setAttribute("fill-opacity", "0.82");
+        path.setAttribute("class", `geo-feature${state.selectedFeatureIndex === index ? " selected" : ""}`);
+        path.dataset.index = String(index);
+
+        const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+        title.textContent = featureLabel(feature, index);
+        path.appendChild(title);
+
+        path.addEventListener("mouseenter", () => {
+          els.mapLabel.textContent = featureLabel(feature, index);
+        });
+        path.addEventListener("mouseleave", () => {
+          els.mapLabel.textContent = `${state.previewName || "GeoJSON"}: ${features.length.toLocaleString()} features`;
+        });
+        path.addEventListener("click", () => {
+          if (state.suppressFeatureClick) return;
+          state.selectedFeatureIndex = index;
+          els.featureDetails.textContent = selectedFeatureText(feature, index);
+          renderGeoJsonPreview();
+        });
+
+        fragment.appendChild(path);
+      });
+
+      layer.appendChild(fragment);
+      els.mapSvg.appendChild(layer);
+      applyMapTransform();
+      els.mapLabel.textContent = `${state.previewName || "GeoJSON"}: ${features.length.toLocaleString()} features`;
+      els.grainTitle.textContent = state.previewName || "Loaded GeoJSON";
+      els.grainCopy.textContent = `${features.length.toLocaleString()} polygon features are rendered in the browser. Hover or click a region to inspect its properties.`;
+      const selected = features[state.selectedFeatureIndex];
+      els.featureDetails.textContent = selectedFeatureText(selected, state.selectedFeatureIndex);
+    }
+
+    function loadPreviewGeojson(geojson, name, bytes) {
+      state.previewGeojson = geojson;
+      state.previewName = name;
+      state.previewBytes = bytes || new Blob([JSON.stringify(geojson)]).size;
+      state.selectedFeatureIndex = null;
+      state.mapScale = 1;
+      state.mapPanX = 0;
+      state.mapPanY = 0;
+      renderGeoJsonPreview();
+    }
+
+    function previewError(title, message) {
+      state.previewGeojson = null;
+      state.previewName = "";
+      state.previewBytes = 0;
+      state.selectedFeatureIndex = null;
+      state.mapScale = 1;
+      state.mapPanX = 0;
+      state.mapPanY = 0;
+      els.mapSvg.innerHTML = "";
+      els.mapEmpty.style.display = "grid";
+      els.mapLabel.textContent = title;
+      els.grainTitle.textContent = "Preview error";
+      els.grainCopy.textContent = message;
+      els.previewFeatureCount.textContent = "0";
+      els.previewIdentifierCheck.textContent = "Not loaded";
+      els.previewSize.textContent = "0 MB";
+      els.featureDetails.textContent = "Click a region after loading GeoJSON.";
+      applyMapTransform();
+    }
+
+    async function loadPreviewFromUrl() {
+      const source = els.geojsonUrl.value.trim();
+      if (!source) {
+        previewError("No GeoJSON URL", "Enter a hosted URL or a local server path such as metabase_zip3.geojson.");
+        return;
+      }
+
+      try {
+        els.mapLabel.textContent = "Loading GeoJSON...";
+        const response = await fetch(source, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} while loading ${source}`);
+        }
+
+        const text = await response.text();
+        loadPreviewGeojson(JSON.parse(text), source, new Blob([text]).size);
+      } catch (error) {
+        previewError("Could not load GeoJSON", error.message);
+      }
+    }
+
+    function sampleGeojson() {
+      const id = state.level;
+      const regions = [
+        {
+          code: state.level === "zip5" ? "10001" : state.level === "zip4" ? "1000" : state.level === "zip3" ? "100" : "10",
+          coords: [[[-74.02, 40.70], [-73.97, 40.70], [-73.96, 40.75], [-74.01, 40.76], [-74.02, 40.70]]]
+        },
+        {
+          code: state.level === "zip5" ? "10002" : state.level === "zip4" ? "1001" : state.level === "zip3" ? "101" : "12",
+          coords: [[[-73.97, 40.70], [-73.91, 40.71], [-73.92, 40.77], [-73.96, 40.75], [-73.97, 40.70]]]
+        },
+        {
+          code: state.level === "zip5" ? "11201" : state.level === "zip4" ? "1120" : state.level === "zip3" ? "112" : "11",
+          coords: [[[-74.01, 40.66], [-73.94, 40.65], [-73.91, 40.71], [-73.97, 40.70], [-74.01, 40.66]]]
+        }
+      ];
+
+      return {
+        type: "FeatureCollection",
+        features: regions.map((region) => ({
+          type: "Feature",
+          properties: {
+            [id]: region.code,
+            name: region.code
+          },
+          geometry: {
+            type: "Polygon",
+            coordinates: region.coords
+          }
+        }))
+      };
+    }
+
+    function render() {
+      const meta = levelMeta[state.level];
+
+      els.buttons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.level === state.level);
+      });
+
+      els.levelHelp.textContent = meta.help;
+      els.simplifyValue.textContent = Number(state.simplify).toFixed(4).replace(/0+$/, "").replace(/\.$/, ".0");
+      els.localPathWrap.style.display = state.useLocal ? "grid" : "none";
+      els.identifierMetric.textContent = state.level;
+      els.propertiesMetric.textContent = `${state.level}, name`;
+      els.sizeMetric.textContent = meta.size;
+      els.warningBox.textContent = meta.warning;
+      els.mapCanvas.dataset.level = state.level;
+      els.matchCopy.textContent = `Your query must return a \`${state.level}\` column.`;
+      els.commandOutput.textContent = buildCommand();
+      els.sqlOutput.textContent = meta.sql;
+      els.setupFields.textContent = `Region identifier: ${state.level}. Display name: name.`;
+      els.statusPill.textContent = `${meta.posture}: ${meta.label}`;
+      renderGeoJsonPreview();
+    }
+
+    els.buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.level = button.dataset.level;
+        render();
+      });
+    });
+
+    els.zipCsv.addEventListener("input", (event) => {
+      state.zipCsv = event.target.value.trim();
+      render();
+    });
+
+    els.zipCol.addEventListener("input", (event) => {
+      state.zipCol = event.target.value.trim();
+      render();
+    });
+
+    els.simplify.addEventListener("input", (event) => {
+      state.simplify = Number(event.target.value).toFixed(4);
+      render();
+    });
+
+    els.useLocal.addEventListener("change", (event) => {
+      state.useLocal = event.target.checked;
+      render();
+    });
+
+    els.localPath.addEventListener("input", render);
+
+    els.filterEnabled.addEventListener("change", (event) => {
+      state.filterEnabled = event.target.checked;
+      render();
+    });
+
+    els.zoomIn.addEventListener("click", () => {
+      zoomMap(1.6);
+    });
+
+    els.zoomOut.addEventListener("click", () => {
+      zoomMap(1 / 1.6);
+    });
+
+    els.zoomReset.addEventListener("click", resetMapView);
+
+    els.mapSvg.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const point = svgPointFromClient(event.clientX, event.clientY);
+      zoomMap(event.deltaY < 0 ? 1.28 : 1 / 1.28, point);
+    }, { passive: false });
+
+    els.mapSvg.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      state.isDraggingMap = true;
+      state.dragMoved = false;
+      state.dragStartClientX = event.clientX;
+      state.dragStartClientY = event.clientY;
+      state.dragStartPanX = state.mapPanX;
+      state.dragStartPanY = state.mapPanY;
+      els.mapSvg.classList.add("dragging");
+      els.mapSvg.setPointerCapture(event.pointerId);
+    });
+
+    els.mapSvg.addEventListener("pointermove", (event) => {
+      if (!state.isDraggingMap) return;
+      const rect = els.mapSvg.getBoundingClientRect();
+      const dx = (event.clientX - state.dragStartClientX) * (MAP_WIDTH / rect.width);
+      const dy = (event.clientY - state.dragStartClientY) * (MAP_HEIGHT / rect.height);
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+        state.dragMoved = true;
+      }
+      state.mapPanX = state.dragStartPanX + dx;
+      state.mapPanY = state.dragStartPanY + dy;
+      applyMapTransform();
+    });
+
+    function finishMapDrag(event) {
+      if (!state.isDraggingMap) return;
+      state.isDraggingMap = false;
+      els.mapSvg.classList.remove("dragging");
+      if (state.dragMoved) {
+        state.suppressFeatureClick = true;
+        window.setTimeout(() => {
+          state.suppressFeatureClick = false;
+        }, 0);
+      }
+      if (els.mapSvg.hasPointerCapture(event.pointerId)) {
+        els.mapSvg.releasePointerCapture(event.pointerId);
+      }
+    }
+
+    els.mapSvg.addEventListener("pointerup", finishMapDrag);
+    els.mapSvg.addEventListener("pointercancel", finishMapDrag);
+    els.mapSvg.addEventListener("pointerleave", finishMapDrag);
+
+    els.geojsonFile.addEventListener("change", async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        loadPreviewGeojson(JSON.parse(text), file.name, file.size);
+      } catch (error) {
+        previewError("Could not parse GeoJSON", error.message);
+      }
+    });
+
+    els.loadUrlPreview.addEventListener("click", loadPreviewFromUrl);
+
+    els.geojsonUrl.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        loadPreviewFromUrl();
+      }
+    });
+
+    els.samplePreview.addEventListener("click", () => {
+      loadPreviewGeojson(sampleGeojson(), `sample_${state.level}.geojson`, 0);
+    });
+
+    els.clearPreview.addEventListener("click", () => {
+      state.previewGeojson = null;
+      state.previewName = "";
+      state.previewBytes = 0;
+      state.selectedFeatureIndex = null;
+      state.mapScale = 1;
+      state.mapPanX = 0;
+      state.mapPanY = 0;
+      els.geojsonFile.value = "";
+      renderGeoJsonPreview();
+    });
+
+    document.querySelectorAll("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const target = document.getElementById(button.dataset.copy);
+        try {
+          await navigator.clipboard.writeText(target.textContent);
+          button.textContent = "Copied";
+          window.setTimeout(() => {
+            button.textContent = "Copy";
+          }, 1200);
+        } catch {
+          button.textContent = "Select";
+          target.focus();
+        }
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>
